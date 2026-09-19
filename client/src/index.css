@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-saas-lightBg text-saas-lightText dark:bg-saas-darkBg dark:text-saas-darkText antialiased font-sans transition-colors duration-200;
+  }
+
+  ::selection {
+    background: rgba(247, 147, 26, 0.2);
+    color: inherit;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.015em;
+  }
+
+  input, select, textarea, button {
+    font-family: inherit;
+  }
+}
+
+/* Modern minimal scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-[#2D3135] rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-600;
+}
+
+@layer components {
+  /* Enterprise SaaS Card Surface */
+  .saas-card {
+    @apply bg-white dark:bg-[#191C1F] border border-gray-200/80 dark:border-[#2D3135] rounded-2xl shadow-saas-card transition-all duration-200;
+  }
+
+  .saas-card-hover {
+    @apply hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-saas-hover transition-all duration-200;
+  }
+
+  /* Secondary surface */
+  .saas-card-secondary {
+    @apply bg-gray-50/70 dark:bg-[#202428] border border-gray-200/60 dark:border-[#2D3135] rounded-xl;
+  }
+
+  /* Soft badge pill */
+  .saas-pill {
+    @apply px-2.5 py-0.5 rounded-full text-xs font-medium border;
+  }
+
+  /* Shared form field styling */
+  .field {
+    @apply bg-white dark:bg-[#191C1F] border border-gray-300 dark:border-[#2D3135] rounded-xl px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-btc-orange/20 focus:border-btc-orange;
+  }
+
+  /* Legacy utility alias compatibility */
+  .glass-panel {
+    @apply saas-card;
+  }
+
+  .glass-card {
+    @apply saas-card-secondary;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
