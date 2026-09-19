@@ -43,26 +43,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiter
+const path = require('path');
+const fs = require('fs');
+
+// Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
   message: { success: false, message: 'Too many requests from this IP, please try again later.' }
 });
 app.use('/api', limiter);
-
-// Root endpoint
-app.get('/', (req, res) => {
-  const indexPath = path.join(__dirname, '..', 'client', 'dist', 'index.html');
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath);
-  }
-  res.json({
-    app: 'Bitcoin Traffic Intelligence API',
-    status: 'ONLINE',
-    version: '1.0.0',
-    documentation: '/api/health'
-  });
-});
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -72,26 +62,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve built client (production) with SPA fallback
-const path = require('path');
-const fs = require('fs');
-const distDir = path.join(__dirname, '..', 'client', 'dist');
-if (fs.existsSync(distDir)) {
-  app.use(express.static(distDir, {
-    setHeaders: (res, filePath) => {
-      if (filePath.endsWith('index.html')) {
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      }
-    }
-  }));
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.sendFile(path.join(distDir, 'index.html'));
-  });
-}
-
-// Register API Routes
+// Register API Routes FIRST
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/wallets', walletRoutes);
@@ -101,6 +72,31 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/network', networkRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/search', searchRoutes);
+
+// Serve built client (production) with SPA fallback for all non-API routes
+const distDir = path.join(__dirname, '..', 'client', 'dist');
+if (fs.existsSync(distDir)) {
+  app.use(express.static(distDir, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      }
+    }
+  }));
+  app.get('*', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.sendFile(path.join(distDir, 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({
+      app: 'Bitcoin Traffic Intelligence API',
+      status: 'ONLINE',
+      version: '1.0.0',
+      documentation: '/api/health'
+    });
+  });
+}
 
 // Global Error Handler
 app.use(errorHandler);
