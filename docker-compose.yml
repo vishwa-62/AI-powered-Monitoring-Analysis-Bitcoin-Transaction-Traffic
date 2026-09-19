@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # 1. MySQL 8.0 Database Container
+  db:
+    image: mysql:8.0
+    container_name: bitcoin_monitoring_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: bitcoin_monitoring
+      MYSQL_USER: bitcoin_user
+      MYSQL_PASSWORD: bitcoin_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Python AI Risk Scoring & Pattern Detection Microservice
+  ai-service:
+    build:
+      context: ./ai_service
+      dockerfile: Dockerfile
+    container_name: bitcoin_ai_service
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+
+  # 3. Node.js Express Backend API & WebSocket Server
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: bitcoin_backend_api
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=bitcoin_user
+      - DB_PASSWORD=bitcoin_password
+      - DB_NAME=bitcoin_monitoring
+      - AI_SERVICE_URL=http://ai-service:8000
+      - JWT_SECRET=production_super_secret_jwt_key_2026
+    depends_on:
+      db:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+
+  # 4. React Vite Production Frontend served via Nginx Reverse Proxy
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: bitcoin_frontend_ui
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
